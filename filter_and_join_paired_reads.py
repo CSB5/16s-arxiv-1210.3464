@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-"""Script to inject into QIIME workflow that removes discordant
+"""Script to inject into QIIME (1.3) workflow that removes discordant
 read-pairs from OTU maps produced in two separate runs (one for each
-side). OTUs must have same ids, i.e. this only works if you used a OTU
+end). OTUs must have same ids, i.e. this only works if you used a OTU
 reference. Output is a QIIME-style OTU table."""
 
 
@@ -11,6 +11,7 @@ import logging
 import os
 import sys
 from optparse import OptionParser
+import gzip
 
 #--- third-party imports
 #
@@ -20,7 +21,6 @@ if False:
     from IPython.core import ultratb
     sys.excepthook = ultratb.FormattedTB(mode='Verbose',
                                          color_scheme='Linux', call_pdb=1)
-
 
 #--- project specific imports
 #
@@ -46,7 +46,7 @@ logging.basicConfig(level=logging.WARN,
 
 def build_read_id_map(fname_fa):
     """
-    FIXME
+    FIXME:add-doc
     """
     fh_fa = open(fname_fa, 'r')
     read_id_map = dict()
@@ -78,7 +78,10 @@ def parse_otu_tax(fname_tax):
     """
 
     otu_tax_map = dict()
-    fh_tax = open(fname_tax, 'r')
+    if fname_tax[-3:] == ".gz":
+        fh_tax = gzip.open(fname_tax, 'r')
+    else:
+        fh_tax = open(fname_tax, 'r')
     for line in fh_tax:
         line = line.rstrip(os.linesep)
         if len(line) == 0 or line.startswith("#"):
@@ -102,10 +105,7 @@ def parse_otu_tax(fname_tax):
 
     
 def parse_otu_map(fname_otu, read_id_map):
-    """
-    FIXME
-    
-    Use value of read_id_map[qiime_id] instead of qiime_id as key here
+    """Use value of read_id_map[qiime_id] instead of qiime_id as key here
     and otu as value
     """
 
@@ -130,7 +130,8 @@ def parse_otu_map(fname_otu, read_id_map):
                 orig_id = read_id_map[qiime_id]
             except KeyError:
                 sys.stderr.write("WARNING: orig_id = read_id_map[qiime_id] failed. Dropping to console.")
-                import pdb; pdb.set_trace()
+                import pdb; 
+                pdb.set_trace()
             qiime_read_id_to_otu_map[orig_id] = otu
     fh_otu.close()
     
@@ -143,10 +144,8 @@ def parse_otu_map(fname_otu, read_id_map):
 def filter_and_join_paired_reads(method,
                                  f_seqs_1, f_otu_map_1,
                                  f_seqs_2, f_otu_map_2,
-                                 f_tax,
-                                 f_out):
-    """
-    FIXME
+                                 f_tax, f_out):
+    """FIXME:add-doc
     """
     
     # qiime id's are different to the original ones and the ones
@@ -226,7 +225,7 @@ def filter_and_join_paired_reads(method,
             
             # remove everything up to first ambigious level Either
             # empty (__;) or starts with 'unclassified' and
-            # 'uncultured' Swee Hoe's DB
+            # 'uncultured' in Swee Hoe's DB
             for ambiguity_string in  ['__;', '__unc']:
                 try:
                     tax_otu_1_cmp = tax_otu_1[:tax_otu_1.index(ambiguity_string)-1]
@@ -310,11 +309,11 @@ def cmdline_parser():
                       help="Greengenes-style taxonomy assignment file classifying seqs/OTUs")
     parser.add_option("", "--seqs1",
                       dest="fseq1", # type="string|int|float"
-                      help="Fasta file containing the QIIME prepared reads of one end"
+                      help="Fasta file containing the QIIME formatted reads of one end"
                       ", i.e. the seq ids are the qiime-id followed by the original read id")
     parser.add_option("", "--seqs2",
                       dest="fseq2", # type="string|int|float"
-                      help="Fasta file containing the QIIME prepared reads of the other end"
+                      help="Fasta file containing the QIIME formatted reads of the other end"
                       ", i.e. the seq ids are the qiime-id followed by the original read id")
     parser.add_option("", "--otu1",
                       dest="fotu1", # type="string|int|float"
@@ -322,8 +321,12 @@ def cmdline_parser():
     parser.add_option("", "--otu2",
                       dest="fotu2", # type="string|int|float"
                       help="OTU map (i.e., result from pick_otus.py, NOT otu_table.txt) for other end")
+    choices = ['same-otu', 'same-tax', 'concordant-tax']
+    default = "same-otu"
     parser.add_option("-m", "--method",
-                      dest="method", choices=['same-otu', 'same-tax', 'concordant-tax'],
+                      dest="method",  
+                      default=default,
+                      choices=choices,
                       help="OTU map (i.e., result from pick_otus.py) for other end")
 
     return parser
@@ -331,8 +334,7 @@ def cmdline_parser():
 
 
 def main():
-    """
-    FIXME
+    """FIXME:add-doc
     """
 
     parser = cmdline_parser()
@@ -386,7 +388,5 @@ def main():
           
 
 if __name__ == "__main__":
-    #LOG.warn("FIXME: for Swee Hoe's DB: remove 'unclassified' (ambiguity)")
-
     main()
     LOG.info("successful exit")
