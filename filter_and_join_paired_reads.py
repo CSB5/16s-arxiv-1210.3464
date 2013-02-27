@@ -28,7 +28,7 @@ if False:
 
 
 __author__ = "Andreas Wilm"
-__version__ = "0.1"
+__version__ = "1.0"
 __email__ = "wilma@gis.a-star.edu.sg"
 __copyright__ = ""
 __license__ = ""
